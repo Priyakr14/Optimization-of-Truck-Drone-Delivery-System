@@ -1,0 +1,98 @@
+
+model "Tour planning"
+ uses "mmxprs", "mmsvg"
+
+
+ declarations
+  NCITIES = 17
+  CITIES = 1..NCITIES                    ! Cities
+ 
+  k = 2
+  M = 1000
+  DIST: array(CITIES,CITIES) of integer  ! Distance between cities
+  X,Y: array(CITIES) of integer
+  truck: array(CITIES,CITIES) of mpvar     ! 1 if flight from i to j
+  drone: array(CITIES,CITIES) of mpvar     ! 1 if drone is active
+  em_dr: array(CITIES,CITIES) of mpvar     ! empty drone
+  tr_n: array(CITIES) of mpvar             ! 1 if truck visit particular node
+  
+  lambda: array(CITIES) of mpvar
+  
+ end-declarations
+
+ initializations from 'tsp.dat'
+  DIST [X,Y] as 'POS'
+ end-initializations
+
+ forall(i,j in CITIES | i<>j) DIST(j,i):=DIST(i,j)
+
+! Objective: total cost
+ TotalCost:= sum(i,j in CITIES | i<>j) DIST(i,j)*truck(i,j)*10 + sum(i,j in CITIES | i<>j) DIST(i,j)*drone(i,j)*3 + sum(i,j in CITIES | i<>j) DIST(i,j)*em_dr(i,j)*3
+
+! trucks constraint
+! truck leaves from node 1 i.e. depot
+ sum(j in CITIES) truck(1,j)= 1
+ ! truck comes back to node 17 i.e. depot
+ sum(j in CITIES) truck(j,17)= 1
+ ! truck do not come to node 1 i.e. depot
+ forall(j in CITIES) truck(j,1) = 0
+ ! truck do not leave node 17 i.e. depot
+ forall(j  in CITIES) truck(17,j) = 0
+ ! truck do not go to node 1 to 17 i.e. 17 is duplicate of 1
+ truck(1,17) = 0
+ 
+ ! Node(j) to get on for launching drones only if truck has come to that node
+ forall(j in 2..16) tr_n(j) = 1*sum(i in CITIES)truck(i,j)
+ !Truck should come to node(i) from anyone of the nodes and 
+ !should leave node (i) to anyone of the nodes.
+ !given both nodes are in the optimal path for truck
+ forall(i in 2..16) sum(j in CITIES | i<>j) truck(i,j) = 1*tr_n(i)
+ forall(j in 2..16) sum(i in CITIES | i<>j) truck(i,j) = 1*tr_n(j)
+ ! truck has to leave from any node it has reached
+ forall(i in 2..16) sum(j in CITIES) truck(i, j) = sum(j in CITIES) truck(j,i)
+ 
+ ! Constraint for drones
+ !max no. of drones launched from any node, given truck has reached that node
+ forall(i in 2..16) sum(j in CITIES) drone(i,j) <= k *tr_n(i)
+ !If drone has been launched from any node, it has to return to the same node
+ forall(i in 2..16,j in 2..16) em_dr(i,j) = drone(j,i)
+ !Drone should have visited all customers once
+ forall(i in 2..16) sum(j in 2..16 | i<>j) (drone(i,j) + drone(j,i)) >= 1
+ !Arc start and end nodes should be different
+ forall(i in CITIES) drone(i,i)= 0
+ forall(i in CITIES) truck(i,i)= 0
+ ! drones can not be launched from node 1 and cannot reach 17
+ forall(j in CITIES) drone(1,j) = 0
+ forall(i in CITIES) drone(i,17) = 0
+ 
+ !! SUBTOUR ELIMINATION CONSTRAINT
+
+lambda(1)= 1
+lambda(17)= 17
+forall(i in CITIES, j in CITIES) lambda(j) >= lambda(i) + 1 - M*(1 - truck(i, j))
+
+!Variable types
+ forall(i,j in CITIES | i<>j) truck(i,j) is_binary
+ forall(i,j in CITIES | i<>j) drone(i,j) is_binary
+ forall(i,j in CITIES | i<>j) em_dr(i,j) is_binary
+ forall(i in CITIES) tr_n(i) is_binary
+ forall(i in CITIES) lambda(i) is_integer
+
+
+! Solve the problem
+ minimize(TotalCost)
+
+
+writeln("Begin running model")
+writeln ("Optimal tour cost is: ", getobjval)
+forall (i,j in CITIES | getsol (truck(i,j))>0) do
+writeln("TRUCK IS ON ROUTE ", i, " to ", j)
+end-do
+forall (i,j in CITIES | getsol (drone(i,j))>0) do
+writeln("DRONE IS ON ROUTE ", i," to ", j)
+end-do
+forall (i,j in CITIES | getsol (em_dr(i,j))>0) do
+writeln("DRONE RETURNING ON ROUTE ", i," to ", j)
+end-do
+writeln("End running model")
+
