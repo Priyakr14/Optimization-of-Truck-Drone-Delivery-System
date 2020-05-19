@@ -11,25 +11,15 @@ Each subdirectory contains the source of one library, along with building instru
 
 Furthermore, the moseltest program provides a general testing framework for source Mosel files, C programs or Java programs.
 
-Contents
-Modules and packages
-Component	Type	Description	Notes
-myxprs	DSO	Example of using the Mosel NI matrix handling interface for connecting an LP/MIP solver (Xpress Optimizer)	Requires Xpress Optimizer libraries
-myqxprs	DSO	Example of using the library interface of the module mmnl that extends the Mosel NI matrix interface with handling of nonlinearities for connecting an NLP solver (quadratic solver of Xpress Optimizer)	Requires Xpress Optimizer libraries
-math	DSO	Additional Maths functions for the Mosel language	Compiled version is included in the Mosel distribution
-random	DSO	Alternative random number generators	Compiled version is included in the Mosel distribution
-minisat	DSO	Example implementation of a simple interface to a SAT solver	Requires SAT solver libraries
-jobqueue	BIM	Managing the remote execution of submodels via mmjobs functionality	-
-Mosel testing system
-moseltesting General framework for testing Mosel using source Mosel files, C programs or Java programs
-
 Documentation
+
 Mosel documentation:
 Mosel Language Reference
 Mosel User Guide
 Mosel NI Reference
 Mosel NI User Guide
 Mosel model and program examples: Examples database
+
 Installation
 If you do not have any recent installation of FICO Xpress, download the free Xpress Community Edition from Xpress Community Edition download, located on FICO's website. Please note that this download is solely governed under FICO's Xpress Community License, Shrinkwrap License Agreement, FICO Xpress Optimization Suite, FICO Xpress Insight.
 
